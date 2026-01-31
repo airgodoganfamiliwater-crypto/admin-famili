@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#14b8a6">
+  <link rel="icon" href="ikon-512.png">
+  <title>Edit Gifts - Admin</title>
+
+  <!-- CSS sederhana -->
+<style>
+body {
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(20,184,166,.15), transparent 50%),
+    radial-gradient(circle at bottom right, rgba(251,146,60,.1), transparent 50%),
+    linear-gradient(135deg, #f3f4f6, #e0f2fe);
+    min-height:100vh;
+    padding-bottom: 50px;
+}
+  /* ================= GENERAL ================= */
+  * {
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+  
+  /* ================= THEME ================= */
+  :root{
+    --primary:#14b8a6;      /* Biru kehijauan futuristik */
+    --accent:#fb923c;       /* Oranye aksen */
+    --bg:#f3f4f6;           /* Latar belakang cerah */
+    --card:#ffffff;         /* Card putih bersih */
+    --border:#d1d5db;       /* Border abu lembut */
+    --text:#1f2937;         /* Teks utama gelap lembut */
+    --muted:#f3f3f3;        /* Teks sekunder */
+    --glow:0 0 20px rgba(20,184,166,.2);
+  }
+  /* Header */
+  .header {
+    background: var(--primary);
+    height: 120px;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+    position: relative;
+  }
+  
+  /* Container */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Card */
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    position: relative;
+    top: -40px; /* Card menimpa header sedikit */
+  }
+   .card h1 {
+    margin-top: 0;
+    color: var(--primary);
+    text-align: center;
+  }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #fff;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .giftName {
+      font-weight: bold;
+      font-size: 18px;
+      color: #333;
+      cursor: pointer;
+    }
+    .btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btnEdit {
+      background: #2d9cdb;
+      color: white;
+    }
+
+    /* Modal CSS */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal-content {
+      background: #fff;
+      width: 90%;
+      max-width: 600px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+    }
+    .field {
+      margin: 10px 0;
+    }
+    .field label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    .field span {
+      display: block;
+      margin-top: 5px;
+      color: #333;
+    }
+    .field input, .field textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .imagePreview {
+      width: 100%;
+      max-height: 320px;
+      object-fit: contain;
+      border-radius: 12px;
+      margin-top: 12px;
+      border: 1px solid #ddd;
+    }
+
+    /* Tambah Gift */
+    #addGiftSection {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    #addGiftSection h2 {
+      margin: 0 0 10px 0;
+      color: #0041cd;
+    }
+    #addGiftSection button {
+      background: #0f8b3a;
+      color: white;
+    }
+  /* NAVIGASI BAWAH */
+  .bottomNav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+  }
+  
+  .navItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 12px;
+  }
+  
+  .navIcon {
+    background: var(--muted);
+    border-radius: 50%;
+    padding: 8px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: all 0.2s ease;
+  }
+  
+  .navIcon svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--primary);
+  }
+  
+  /* NAVIGASI BAWAH AKTIF */
+  .navItem.active .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem.active span {
+    color: var(--accent);
+  }
+  
+  /* Hover tetap */
+  .navItem:hover .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem:hover span {
+    color: var(--accent);
+  }
+  </style>
+</head>
+<body>
+  <div class="header"></div>
+  <div class="container">
+    <div class="card">
+      <h1>Daftar Gift</h1>
+      <ul id="giftsList"></ul>
+      <!-- Modal -->
+      <div id="modal" class="modal">
+        <div class="modal-content">
+          <h2 id="modalTitle">Detail Gift</h2>
+          <div id="modalBody"></div>
+      
+          <div style="margin-top: 15px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="btnEdit" class="btn btnEdit">Edit</button>
+            <button id="btnSave" class="btn btnEdit" style="display:none;">Save</button>
+            <button id="btnCancel" class="btn btnEdit" style="display:none;">Cancel</button>
+            <button id="btnClose" class="btn" style="background:#f00; color:white;">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+    <!-- Tambah Gift -->
+    <h1>Input Gift</h1>
+    <section id="addGiftSection">
+      <form id="addGiftForm">
+        <div class="field">
+          <label>Document ID (manual)</label>
+          <input id="giftDocId" placeholder="contoh: gift_001" required />
+        </div>
+        <div class="field">
+          <label>Nama Gift</label>
+          <input id="namaGift" placeholder="Nama Gift" required />
+        </div>
+        <div class="field">
+          <label>Point Gift</label>
+          <input id="pointGift" type="number" placeholder="Point Gift" required />
+        </div>
+        <div class="field">
+          <label>Stock</label>
+          <input id="stock" type="number" placeholder="Stock" required />
+        </div>
+        <div class="field">
+          <label>Image URL</label>
+          <input id="imageURL" placeholder="URL gambar" required />
+        </div>
+        <div class="field">
+          <label>Deskripsi</label>
+          <textarea id="deskripsi" placeholder="Deskripsi gift" required></textarea>
+        </div>
+        <button type="submit" class="btn">Tambah Gift</button>
+      </form>
+    </section>
+    </div>
+  </div>
+<!-- NAVIGASI BAWAH -->
+<div class="bottomNav">
+  <a href="index.html" class="navItem">
+    <div class="navIcon">
+      <!-- Home SVG -->
+      <svg width="36" viewBox="0 0 1664 1312" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M1408 768v480q0 26-19 45t-45 19H960V928H704v384H320q-26 0-45-19t-19-45V768q0-1 .5-3t.5-3l575-474l575 474q1 2 1 6zm223-69l-62 74q-8 9-21 11h-3q-13 0-21-7L832 200L140 777q-12 8-24 7q-13-2-21-11l-62-74q-8-10-7-23.5T37 654L756 55q32-26 76-26t76 26l244 204V64q0-14 9-23t23-9h192q14 0 23 9t9 23v408l219 182q10 8 11 21.5t-7 23.5z" fill="currentColor"/></svg>
+    </div>
+    <span>Home</span>
+  </a>
+  <a href="validasi.html" class="navItem">
+    <div class="navIcon">
+      <!-- Input / Form SVG -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+      </svg>
+
+    </div>
+    <span>Input</span>
+  </a>
+  <a href="edit.html" class="navItem">
+    <div class="navIcon">
+      <!-- Edit SVG -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z" />
+        <path d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z" />
+      </svg>
+
+    </div>
+    <span>Edit</span>
+  </a>
+  <a href="datamemeber.html" class="navItem">
+    <div class="navIcon">
+      <!-- Member / User SVG -->
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
+        <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+      </svg>
+
+    </div>
+    <span>Member</span>
+  </a>
+</div>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCl13_a4x-BQnWNUjf9JOQX1DKc-HxLBys",
+      authDomain: "klien-39696.firebaseapp.com",
+      projectId: "klien-39696",
+      storageBucket: "klien-39696.appspot.com",
+      messagingSenderId: "434516298894",
+      appId: "1:434516298894:web:fad97694415bd4237acddf"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const giftsList = document.getElementById('giftsList');
+
+    // Auth Check
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = "loginadmin.html";
+        return;
+      }
+
+      const adminDoc = await db.collection('admins').doc(user.uid).get();
+
+      if (!adminDoc.exists || adminDoc.data().role !== "admin" || adminDoc.data().status !== "approved") {
+        await auth.signOut();
+        window.location.href = "loginadmin.html";
+        return;
+      }
+
+      // jika valid admin
+      loadGifts();
+    });
+
+    // Load Gifts
+    async function loadGifts(){
+      giftsList.innerHTML = "";
+
+      const snapshot = await db.collection('gifts').get();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+
+        li.innerHTML = `
+          <div class="giftName" onclick="openImage('${doc.id}')">${data.namaGift || 'Gift'}</div>
+          <button class="btn btnEdit" onclick="openEdit('${doc.id}')">Edit</button>
+        `;
+
+        giftsList.appendChild(li);
+      });
+    }
+
+    // Open image popup (klik namaGift)
+    async function openImage(giftId){
+      const doc = await db.collection('gifts').doc(giftId).get();
+      const data = doc.data();
+
+      modalTitle.innerText = data.namaGift || "Gambar Gift";
+      modalBody.innerHTML = `
+        <div class="field">
+          <label>Gambar</label>
+          <img class="imagePreview" src="${data.imageURL || ''}" alt="Gambar Gift">
+        </div>
+        <div class="field"><label>Deskripsi</label><span>${data.deskripsi || '-'}</span></div>
+      `;
+
+      btnEdit.style.display = "none";
+      btnSave.style.display = "none";
+      btnCancel.style.display = "none";
+
+      openModal();
+    }
+
+    // Open gift detail
+    async function openEdit(giftId){
+      currentDocId = giftId;
+      const doc = await db.collection('gifts').doc(giftId).get();
+      currentData = doc.data();
+    
+      modalTitle.innerText = currentData.namaGift || "Gift Detail";
+      renderViewMode(currentData);
+      openModal();
+    }
+
+    let currentDocId = null;
+    let currentData = null;
+  
+    // Modal control
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const btnEdit = document.getElementById('btnEdit');
+    const btnSave = document.getElementById('btnSave');
+    const btnCancel = document.getElementById('btnCancel');
+    const btnClose = document.getElementById('btnClose');
+  
+    function openModal(){
+      modal.style.display = "flex";
+    }
+    function closeModal(){
+      modal.style.display = "none";
+      btnEdit.style.display = "block";
+      btnSave.style.display = "none";
+      btnCancel.style.display = "none";
+    }
+
+    function renderViewMode(data){
+      modalBody.innerHTML = `
+        <div class="field"><label>Nama Gift</label><span>${data.namaGift || '-'}</span></div>
+        <div class="field"><label>Point Gift</label><span>${data.pointGift || '-'}</span></div>
+        <div class="field"><label>Stock</label><span>${data.stock || '-'}</span></div>
+        <div class="field"><label>Image URL</label><span>${data.imageURL || '-'}</span></div>
+        <div class="field"><label>Deskripsi</label><span>${data.deskripsi || '-'}</span></div>
+      `;
+    
+      btnEdit.style.display = "block";
+      btnSave.style.display = "none";
+      btnCancel.style.display = "none";
+    }
+    
+    function renderEditMode(data){
+      modalBody.innerHTML = `
+        <div class="field"><label>Nama Gift</label><input id="input-namaGift" value="${data.namaGift || ''}"></div>
+        <div class="field"><label>Point Gift</label><input id="input-pointGift" value="${data.pointGift || ''}"></div>
+        <div class="field"><label>Stock</label><input id="input-stock" value="${data.stock || ''}"></div>
+        <div class="field"><label>Image URL</label><input id="input-imageURL" value="${data.imageURL || ''}"></div>
+        <div class="field"><label>Deskripsi</label><input id="input-deskripsi" value="${data.deskripsi || ''}"></div>
+      `;
+    
+      btnEdit.style.display = "none";
+      btnSave.style.display = "block";
+      btnCancel.style.display = "block";
+    }
+    
+    // tombol edit
+    btnEdit.addEventListener('click', () => {
+      renderEditMode(currentData);
+    });
+    
+    // tombol cancel
+    btnCancel.addEventListener('click', () => {
+      renderViewMode(currentData);
+    });
+    
+    // tombol close
+    btnClose.addEventListener('click', () => {
+      closeModal();
+    });
+    
+    // tombol save
+    btnSave.addEventListener('click', async () => {
+      const updatedData = {
+        namaGift: document.getElementById('input-namaGift').value,
+        pointGift: Number(document.getElementById('input-pointGift').value),
+        stock: Number(document.getElementById('input-stock').value),
+        imageURL: document.getElementById('input-imageURL').value,
+        deskripsi: document.getElementById('input-deskripsi').value
+      };
+    
+      try {
+        await db.collection('gifts').doc(currentDocId).update(updatedData);
+        alert("Berhasil disimpan!");
+        currentData = {...currentData, ...updatedData};
+        renderViewMode(currentData);
+        loadGifts();
+      } catch(err){
+        console.error(err);
+        alert("Gagal menyimpan!");
+      }
+    });
+
+    // Tambah Gift
+    const addGiftForm = document.getElementById("addGiftForm");
+
+    addGiftForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const docId = document.getElementById("giftDocId").value;
+      const namaGift = document.getElementById("namaGift").value;
+      const pointGift = Number(document.getElementById("pointGift").value);
+      const stock = Number(document.getElementById("stock").value);
+      const imageURL = document.getElementById("imageURL").value;
+      const deskripsi = document.getElementById("deskripsi").value;
+
+      if (!docId || !namaGift || !pointGift || !stock || !imageURL || !deskripsi) {
+        return alert("Isi semua field terlebih dahulu!");
+      }
+
+      try {
+        await db.collection('gifts').doc(docId).set({
+          namaGift,
+          pointGift,
+          stock,
+          imageURL,
+          deskripsi
+        });
+
+        alert("Gift berhasil ditambahkan!");
+        addGiftForm.reset();
+        loadGifts(); // reload list gift
+      } catch (error) {
+        alert("Gagal menambahkan gift: " + error.message);
+      }
+    });
+  // ==========================
+  // SET HALAMAN AKTIF NAVIGASI
+  // ==========================
+  const navLinks = document.querySelectorAll('.navItem');
+  const currentPage = window.location.pathname.split("/").pop(); // ambil nama file saat ini
+  
+  navLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentPage){
+      link.classList.add('active'); // tandai halaman aktif
+    }
+  
+    // Optional: smooth hover klik (langsung ke halaman)
+    link.addEventListener('click', () => {
+      navLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+  </script>
+
+</body>
+</html>

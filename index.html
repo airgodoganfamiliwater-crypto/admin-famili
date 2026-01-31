@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14b8a6">
+<link rel="icon" href="ikon-512.png">
+<title>Admin Panel</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(20,184,166,.15), transparent 50%),
+    radial-gradient(circle at bottom right, rgba(251,146,60,.1), transparent 50%),
+    linear-gradient(135deg, #f3f4f6, #e0f2fe);
+    min-height:100vh;
+    padding-bottom: 50px;
+}
+/* ================= GENERAL ================= */
+* {
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* ================= THEME ================= */
+:root{
+  --primary:#14b8a6;      /* Biru kehijauan futuristik */
+  --accent:#fb923c;       /* Oranye aksen */
+  --bg:#f3f4f6;           /* Latar belakang cerah */
+  --card:#ffffff;         /* Card putih bersih */
+  --border:#d1d5db;       /* Border abu lembut */
+  --text:#1f2937;         /* Teks utama gelap lembut */
+  --muted:#f3f3f3;        /* Teks sekunder */
+  --glow:0 0 20px rgba(20,184,166,.2);
+}
+/* Header */
+.header {
+  background: var(--primary);
+  height: 120px;
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 30px;
+  position: relative;
+}
+/* Fade-in container */
+.container {
+  opacity: 0;
+  transform: translateY(20px); /* sedikit turun untuk efek */
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.container.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Container */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Card */
+.card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+  position: relative;
+  top: -40px; /* Card menimpa header sedikit */
+}
+  .logo-circle {
+    width:96px;
+    height:96px;
+    border-radius:50%;
+    background:#fff;
+    border:1px solid #fff;
+    position:absolute;
+    top:-48px;
+    left:16px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    box-shadow:0 10px 20px rgba(0,0,0,0.25);
+    animation: spin 2s infinite alternate;
+  }
+  @keyframes spin {
+    0% { transform: translateY(0) rotate(-10deg); }
+    100% { transform: translateY(-8px) rotate(10deg); }
+  }
+
+  .logo-circle img {
+    width:72px;
+    height:72px;
+    border-radius:50%;
+    object-fit:cover;
+  }
+
+/* Headings */
+.card h1 {
+  margin-top: 30;
+  color: var(--primary);
+  text-align: center;
+}
+.card p {
+  color: var(--text);
+  text-align: center;
+}
+/* Card nav */
+.cardNav {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.cardNav .navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.cardNav .navItem .navIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--muted);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.cardNav .navItem:hover .navIcon {
+  background: var(--primary);
+}
+
+.cardNav .navItem:hover span {
+  color: var(--primary);
+}
+
+.cardNav .navItem.active .navIcon {
+  background: var(--primary);
+}
+
+.cardNav .navItem.active span {
+  color: var(--primary);
+}
+
+.cardNav svg {
+  fill: #fff; /* warna ikon jika hover aktif */
+}
+.card h2 {
+  margin-top: 0;
+  color: var(--primary);
+}
+.konten {
+  background: var(--muted);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.konten h2 {
+  font-size: 20px;
+  color: var(--primary);
+}
+
+/* List styling */
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list li {
+  padding: 12px 10px;
+  border-bottom:1px solid #eee;
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+}
+
+.list li:last-child { border-bottom:none; }
+
+.memberInfo {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+}
+
+.memberName {
+  font-size: 18px;
+  font-weight: 700;
+  color:#333;
+  border:none;
+  background:none;
+  cursor:pointer;
+}
+
+.memberWilayah {
+  font-size: 13px;
+  color:#777;
+}
+
+.btnApprove {
+  padding: 7px 12px;
+  border:none;
+  border-radius: 10px;
+  background:#0041cd;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.btnReject {
+  padding: 7px 12px;
+  border:none;
+  border-radius: 10px;
+  background:#ff3b3b;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+  margin-left: 8px;
+}
+
+.btnApprove:disabled,
+.btnReject:disabled {
+  background:#c7c7c7;
+  cursor:not-allowed;
+}
+
+.searchBox {
+  display: flex;
+  justify-content: center; /* center horizontal */
+  padding: 10px 0;
+}
+
+.searchBox input {
+  width: 100%;
+  max-width: 400px; /* batasi lebar search box */
+  padding: 10px 12px;
+  border-radius: 12px;
+  border:1px solid #ddd;
+  font-size: 14px;
+}
+
+/* Modal */
+.modal {
+  display:none;
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.5);
+  justify-content:center;
+  align-items:center;
+  padding: 20px;
+  z-index: 9999;
+}
+
+.modal.active { display:flex; }
+
+.modalContent {
+  width:100%;
+  max-width: 600px;
+  background:#fff;
+  border-radius: 15px;
+  padding: 20px;
+}
+
+.modalHeader {
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  margin-bottom: 15px;
+}
+
+.closeBtn {
+  border:none;
+  background:#eee;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor:pointer;
+}
+
+.field {
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 12px;
+  background:#f7f8fb;
+  border:1px solid #eee;
+}
+
+.field label {
+  font-weight:600;
+  display:block;
+  margin-bottom: 4px;
+}
+
+.field span {
+  color:#333;
+}
+
+.field input, .field textarea {
+  width:100%;
+  padding: 8px;
+  border-radius: 10px;
+  border:1px solid #ddd;
+  font-size: 14px;
+}
+#popupModal .modalContent {
+  max-width: 400px;
+  text-align: left;
+  animation: popupFade 0.2s ease;
+}
+
+#popupModal .modalContent button {
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#popupModal .btnConfirm {
+  background: var(--primary);
+  color: #fff;
+  margin-left: 8px;
+}
+
+#popupModal .btnCancel {
+  background: #ff3b3b;
+  color: #fff;
+}
+
+@keyframes popupFade {
+  from {transform: scale(0.9); opacity:0;}
+  to {transform: scale(1); opacity:1;}
+}
+/* ========================== */
+/* REJECT MODAL BUTTON STYLING */
+/* ========================== */
+
+/* Tombol Kirim Reject */
+.btnSave {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff5f5f, #ff3b3b); /* gradasi merah */
+  color: #fff;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255,59,59,0.4);
+}
+
+/* Hover effect */
+.btnSave:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255,59,59,0.5);
+}
+
+/* Tombol Batal */
+.btnCancel {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #eee;
+  color: #333;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+}
+
+/* Hover effect Batal */
+.btnCancel:hover {
+  background: #ddd;
+  transform: translateY(-1px);
+}
+
+/* Optional: style container tombol supaya rata kanan */
+.modalContent .btnSave,
+.modalContent .btnCancel {
+  float: right; /* posisinya di kanan modal */
+  margin-top: 15px;
+}
+  /* NAVIGASI BAWAH */
+  .bottomNav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+  }
+  
+  .navItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 12px;
+  }
+  
+  .navIcon {
+    background: var(--muted);
+    border-radius: 50%;
+    padding: 8px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: all 0.2s ease;
+  }
+  
+  .navIcon svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--primary);
+  }
+  
+  /* NAVIGASI BAWAH AKTIF */
+  .navItem.active .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem.active span {
+    color: var(--accent);
+  }
+  
+  /* Hover tetap */
+  .navItem:hover .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem:hover span {
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="header"></div>
+<div class="container">
+
+  <!-- Welcome Card -->
+  <div class="card">
+    <div class="logo-circle">
+    <img src="logofw.png" alt="Logo FW">
+    </div>
+    <h1>Selamat Datang!</h1>
+    <p>Semoga hari Anda menyenangkan. Panel admin siap digunakan.</p>
+        <!-- Tambahkan di dalam card -->
+    <div class="cardNav" style="display:flex; gap:20px; justify-content:center; margin-top:20px;">
+      
+      <!-- Gift -->
+      <a href="validasi.html" class="navItem">
+        <div class="navIcon">
+          <!-- Contoh SVG bulat -->
+         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+          <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
+          <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+        </svg>
+        </div>
+        <span>Validasi</span>
+      </a>
+    
+      <!-- Validasi -->
+      <a href="gifts.html" class="navItem">
+        <div class="navIcon">
+          <!-- Contoh SVG bulat -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <span>Gifts</span>
+      </a>
+    
+    </div>
+  </div>
+
+  <!-- Search Card -->
+  <div class="card">
+    <div class="searchBox">
+      <input type="text" id="searchMember" placeholder="Cari Nama ID...">
+    </div>
+    
+    <!-- Agens Card -->
+    <div class="konten">
+      <h2>Agens</h2>
+      <ul class="list" id="agensList"></ul>
+    </div>
+    <div class="konten">
+    <!-- Members Card -->
+      <h2>Members</h2>
+      <ul class="list" id="membersList"></ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal & Reject Modal tetap sama -->
+<div class="modal" id="modal">
+  <div class="modalContent">
+    <div class="modalHeader">
+      <h3 id="modalTitle">Detail</h3>
+      <button class="closeBtn" onclick="closeModal()">Close</button>
+    </div>
+    <div id="modalBody"></div>
+
+    <div id="btnEdit"></div>
+    <div id="btnSave"></div>
+    <div id="btnCancel"></div>
+  </div>
+</div>
+
+<div class="modal" id="rejectModal">
+  <div class="modalContent">
+    <div class="modalHeader">
+      <h3>Reject Member</h3>
+      <button class="closeBtn" onclick="closeRejectModal()">Close</button>
+    </div>
+
+    <div class="field">
+      <label>Alasan Reject (Template)</label>
+      <textarea id="rejectReason" rows="6"></textarea>
+    </div>
+
+    <button class="btnSave" onclick="confirmReject()">Reject</button>
+    <button class="btnCancel" onclick="closeRejectModal()">Batal</button>
+  </div>
+</div>
+<!-- Popup Universal -->
+<div class="modal" id="popupModal">
+  <div class="modalContent">
+    <div class="modalHeader">
+      <h3 id="popupTitle">Title</h3>
+      <button class="closeBtn" onclick="closePopup()">&times;</button>
+    </div>
+    <div id="popupBody" style="margin:10px 0;"></div>
+    <div id="popupActions" style="text-align:right; margin-top:15px;"></div>
+  </div>
+</div>
+<!-- NAVIGASI BAWAH -->
+<div class="bottomNav">
+  <a href="index.html" class="navItem">
+    <div class="navIcon">
+      <!-- Home SVG -->
+      <svg width="36" viewBox="0 0 1664 1312" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M1408 768v480q0 26-19 45t-45 19H960V928H704v384H320q-26 0-45-19t-19-45V768q0-1 .5-3t.5-3l575-474l575 474q1 2 1 6zm223-69l-62 74q-8 9-21 11h-3q-13 0-21-7L832 200L140 777q-12 8-24 7q-13-2-21-11l-62-74q-8-10-7-23.5T37 654L756 55q32-26 76-26t76 26l244 204V64q0-14 9-23t23-9h192q14 0 23 9t9 23v408l219 182q10 8 11 21.5t-7 23.5z" fill="currentColor"/></svg>
+    </div>
+    <span>Home</span>
+  </a>
+  <a href="helper.html" class="navItem">
+    <div class="navIcon">
+      <!-- Edit SVG -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path d="M5.85 3.5a.75.75 0 0 0-1.117-1 9.719 9.719 0 0 0-2.348 4.876.75.75 0 0 0 1.479.248A8.219 8.219 0 0 1 5.85 3.5ZM19.267 2.5a.75.75 0 1 0-1.118 1 8.22 8.22 0 0 1 1.987 4.124.75.75 0 0 0 1.48-.248A9.72 9.72 0 0 0 19.266 2.5Z" />
+        <path fill-rule="evenodd" d="M12 2.25A6.75 6.75 0 0 0 5.25 9v.75a8.217 8.217 0 0 1-2.119 5.52.75.75 0 0 0 .298 1.206c1.544.57 3.16.99 4.831 1.243a3.75 3.75 0 1 0 7.48 0 24.583 24.583 0 0 0 4.83-1.244.75.75 0 0 0 .298-1.205 8.217 8.217 0 0 1-2.118-5.52V9A6.75 6.75 0 0 0 12 2.25ZM9.75 18c0-.034 0-.067.002-.1a25.05 25.05 0 0 0 4.496 0l.002.1a2.25 2.25 0 1 1-4.5 0Z" clip-rule="evenodd" />
+      </svg>
+
+
+    </div>
+    <span>Helper</span>
+  </a>
+  <a href="datamemeber.html" class="navItem">
+    <div class="navIcon">
+      <!-- Member / User SVG -->
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
+        <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+      </svg>
+
+    </div>
+    <span>Member</span>
+  </a>
+</div>
+<script>
+// Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCl13_a4x-BQnWNUjf9JOQX1DKc-HxLBys",
+  authDomain: "klien-39696.firebaseapp.com",
+  projectId: "klien-39696",
+  storageBucket: "klien-39696.appspot.com",
+  messagingSenderId: "434516298894",
+  appId: "1:434516298894:web:fad97694415bd4237acddf"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Elemen DOM
+const agensList = document.getElementById('agensList');
+const membersList = document.getElementById('membersList');
+const searchMember = document.getElementById('searchMember');
+
+const modal = document.getElementById('modal');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+const btnEdit = document.getElementById('btnEdit');
+const btnSave = document.getElementById('btnSave');
+const btnCancel = document.getElementById('btnCancel');
+
+const rejectModal = document.getElementById('rejectModal');
+const rejectReason = document.getElementById('rejectReason');
+
+// Data
+let agensData = [];
+let membersData = [];
+let currentDocId = null;
+let currentCollection = null;
+let currentData = null;
+let rejectAgenId = null;
+let rejectMemberId = null;
+
+// Apps Script URL
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxREysKWVOLqYEiwyyUqTUeoj95_q1Wl-MFRwjhU1nGLWrrft-_t9d7bQfzmoILWYhp_w/exec";
+
+// ==========================
+// AUTH CHECK
+// ==========================
+auth.onAuthStateChanged(async user => {
+  if(!user){
+    window.location.href = "loginadmin.html";
+    return;
+  }
+  const adminDoc = await db.collection('admins').doc(user.uid).get();
+  if(!adminDoc.exists || adminDoc.data().role !== "admin" || adminDoc.data().status !== "approved"){
+    await auth.signOut();
+    window.location.href = "loginadmin.html";
+    return;
+  }
+  loadMembers();
+  loadAgens();
+});
+
+// ==========================
+// LOAD DATA
+// ==========================
+async function loadMembers(){
+  const snapshot = await db.collection('members').get();
+  membersData = [];
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if(data.status === 'pending'){   // <-- hanya pending
+      membersData.push({ id: doc.id, ...data });
+    }
+  });
+  renderMembers(membersData);
+}
+
+async function loadAgens(){
+  const snapshot = await db.collection('agens').get();
+  agensData = [];
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if(data.status === 'pending'){   // <-- hanya pending
+      agensData.push({ id: doc.id, ...data });
+    }
+  });
+  renderAgens(agensData);
+}
+
+// ==========================
+// RENDER
+// ==========================
+function renderMembers(data){
+  membersList.innerHTML = "";
+  data.forEach(item => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div class="memberInfo">
+        <button class="memberName" onclick="openMember('${item.id}')">${item.namaID || 'Member'}</button>
+        <div class="memberWilayah">${item.wilayah || '-'}</div>
+      </div>
+      <div>
+        <button class="btnApprove" id="btnApprove-${item.id}" ${item.status === 'approved' || item.status === 'reject' ? 'disabled' : ''} onclick="approveMember('${item.id}')">Approved</button>
+        <button class="btnReject" id="btnReject-${item.id}" ${item.status === 'approved' || item.status === 'reject' ? 'disabled' : ''} onclick="rejectMember('${item.id}')">Reject</button>
+      </div>
+    `;
+    membersList.appendChild(li);
+  });
+}
+
+function renderAgens(data){
+  agensList.innerHTML = "";
+  data.forEach(item => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div class="memberInfo">
+        <button class="memberName" onclick="openAgen('${item.id}')">${item.namaID || 'Agen'}</button>
+        <div class="memberWilayah">${item.wilayah || '-'}</div>
+      </div>
+      <div>
+        <button class="btnApprove" ${item.status === 'approved' || item.status === 'reject' ? 'disabled' : ''} onclick="approveAgen('${item.id}')">Approved</button>
+        <button class="btnReject" ${item.status === 'approved' || item.status === 'reject' ? 'disabled' : ''} onclick="rejectAgen('${item.id}')">Reject</button>
+      </div>
+    `;
+    agensList.appendChild(li);
+  });
+}
+
+// ==========================
+// SEARCH
+// ==========================
+searchMember.addEventListener('input', () => {
+  const q = searchMember.value.toLowerCase();
+  renderMembers(membersData.filter(m => (m.namaID || "").toLowerCase().includes(q)));
+  renderAgens(agensData.filter(a => (a.namaID || "").toLowerCase().includes(q)));
+});
+
+// ==========================
+// MODAL
+// ==========================
+function openModal(){ modal.classList.add('active'); }
+function closeModal(){ 
+  modal.classList.remove('active'); 
+  btnEdit.style.display="block"; 
+  btnSave.style.display="none"; 
+  btnCancel.style.display="none"; 
+}
+
+function renderViewMode(data){
+  let html = "";
+  for(let key in data){
+    html += `<div class="field"><label>${key}</label><span>${data[key] || '-'}</span></div>`;
+  }
+  modalBody.innerHTML = html;
+  btnEdit.style.display="block"; btnSave.style.display="none"; btnCancel.style.display="none";
+}
+
+btnCancel.addEventListener('click', () => renderViewMode(currentData));
+
+btnSave.addEventListener('click', async () => {
+  const updatedData = {};
+  for(const key in currentData){
+    const input = document.getElementById(`input-${key}`);
+    if(input) updatedData[key] = input.value;
+  }
+  try{
+    await db.collection(currentCollection).doc(currentDocId).update(updatedData);
+    currentData = {...currentData, ...updatedData};
+    renderViewMode(currentData);
+    alert("Berhasil disimpan!");
+  } catch(err){ console.error(err); alert("Gagal menyimpan!"); }
+});
+
+// ==========================
+// OPEN DETAIL
+// ==========================
+async function openMember(id){
+  currentDocId = id; currentCollection = "members";
+  const doc = await db.collection('members').doc(id).get();
+  currentData = doc.data();
+  modalTitle.innerText = currentData.namaID || "Member Detail";
+  const filtered = {
+    namaLengkap: currentData.namaLengkap,
+    namaID: currentData.namaID,
+    email: currentData.email,
+    wilayah: currentData.wilayah,
+    pengambilan: currentData.pengambilan,
+    agen: currentData.agen
+  };
+  renderViewMode(filtered);
+  openModal();
+}
+
+async function openAgen(id){
+  currentDocId = id; currentCollection = "agens";
+  const doc = await db.collection('agens').doc(id).get();
+  currentData = doc.data();
+  modalTitle.innerText = currentData.namaID || "Agen Detail";
+  const filtered = {
+    namaLengkap: currentData.namaLengkap,
+    namaID: currentData.namaID,
+    email: currentData.email,
+    wilayah: currentData.wilayah
+  };
+  renderViewMode(filtered);
+  openModal();
+}
+
+// ==========================
+// APPROVE / REJECT MODAL STYLE
+// ==========================
+
+// Approve Member
+async function approveMember(memberId){
+  showPopup({
+    title: "Konfirmasi Approve",
+    message: "Apakah Anda yakin ingin approve member ini?",
+    type: "confirm",
+    onConfirm: async () => {
+      try{
+        await db.collection("members").doc(memberId).update({status:"approved"});
+        membersData = membersData.map(m=>m.id===memberId?{...m,status:"approved"}:m);
+        renderMembers(membersData);
+
+        const member = membersData.find(m=>m.id===memberId);
+        if(member?.email) sendEmail(member.email,"Approved","Selamat! Akun Anda telah disetujui, silahkan login https://airgodoganfamiliwater-crypto.github.io/familiwater/login.html.");
+
+        showPopup({title:"Sukses", message:"Member berhasil di-approve!"});
+      }catch(err){ 
+        console.error(err); 
+        showPopup({title:"Error", message:"Gagal approve member."});
+      }
+    }
+  });
+}
+
+// Approve Agen
+async function approveAgen(agenId){
+  showPopup({
+    title: "Konfirmasi Approve",
+    message: "Apakah Anda yakin ingin approve agen ini?",
+    type: "confirm",
+    onConfirm: async () => {
+      try{
+        await db.collection("agens").doc(agenId).update({status:"approved"});
+        agensData = agensData.map(a=>a.id===agenId?{...a,status:"approved"}:a);
+        renderAgens(agensData);
+
+        const agen = agensData.find(a=>a.id===agenId);
+        if(agen?.email) sendEmail(agen.email,"Approved","Selamat! Akun Anda telah disetujui, silahkan login https://airgodoganfamiliwater-crypto.github.io/familiwater/login.html.");
+
+        showPopup({title:"Sukses", message:"Agen berhasil di-approve!"});
+      }catch(err){ 
+        console.error(err); 
+        showPopup({title:"Error", message:"Gagal approve agen."});
+      }
+    }
+  });
+}
+
+// Reject Member
+function rejectMember(memberId){
+  rejectMemberId = memberId;
+  const member = membersData.find(m=>m.id===memberId);
+  rejectReason.value = `Maaf ${member?.namaLengkap||"Member"},\n\nPengajuan Anda tidak dapat kami setujui karena alasan berikut:\n- [Isi alasan]\nSilakan ajukan kembali.\n\nTerima kasih.`;
+  rejectModal.classList.add('active');
+}
+
+// Reject Agen
+function rejectAgen(agenId){
+  rejectAgenId = agenId;
+  const agen = agensData.find(a=>a.id===agenId);
+  rejectReason.value = `Maaf ${agen?.namaLengkap||"Agen"},\n\nPengajuan Anda belum dapat kami setujui.\nSilakan hubungi admin.\n\nTerima kasih.`;
+  rejectModal.classList.add('active');
+}
+
+// Tutup Reject Modal
+function closeRejectModal(){ 
+  rejectModal.classList.remove('active'); 
+}
+
+// Konfirmasi Kirim Reject
+async function confirmReject(){
+  const reason = rejectReason.value.trim();
+  if(!reason){ 
+    showPopup({title:"Error", message:"Alasan reject tidak boleh kosong!"});
+    return; 
+  }
+
+  try{
+    let targetId=null; 
+    let targetEmail=null;
+
+    if(rejectMemberId){
+      targetId = rejectMemberId;
+      await db.collection("members").doc(targetId).update({status:"reject", rejectReason:reason});
+      const member = membersData.find(m=>m.id===targetId);
+      targetEmail = member?.email;
+      rejectMemberId=null;
+    } else if(rejectAgenId){
+      targetId = rejectAgenId;
+      await db.collection("agens").doc(targetId).update({status:"reject", rejectReason:reason});
+      const agen = agensData.find(a=>a.id===targetId);
+      targetEmail = agen?.email;
+      rejectAgenId=null;
+    }
+
+    loadMembers(); 
+    loadAgens();
+
+    if(targetEmail) sendEmail(targetEmail,"Rejected",reason);
+
+    closeRejectModal();
+    showPopup({title:"Sukses", message:"Data berhasil di-reject!"});
+  }catch(err){ 
+    console.error(err); 
+    showPopup({title:"Error", message:"Gagal reject."}); 
+  }
+}
+
+// ==========================
+// SEND EMAIL VIA APPS SCRIPT
+// ==========================
+function sendEmail(email, subject, message){
+  fetch(`${APPS_SCRIPT_URL}?email=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&message=${encodeURIComponent(message)}`)
+    .then(res=>res.json())
+    .then(res=>console.log("Email sent:", res))
+    .catch(err=>console.error("Failed to send email:", err));
+}
+function showPopup({title="Info", message="", type="alert", onConfirm=null}){
+  const popup = document.getElementById('popupModal');
+  const popupTitle = document.getElementById('popupTitle');
+  const popupBody = document.getElementById('popupBody');
+  const popupActions = document.getElementById('popupActions');
+
+  popupTitle.innerText = title;
+  popupBody.innerText = message;
+
+  popupActions.innerHTML = ""; // reset actions
+
+  if(type === "alert"){
+    const okBtn = document.createElement('button');
+    okBtn.className = "btnConfirm";
+    okBtn.innerText = "OK";
+    okBtn.onclick = () => closePopup();
+    popupActions.appendChild(okBtn);
+  } else if(type === "confirm"){
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = "btnConfirm";
+    confirmBtn.innerText = "Ya";
+    confirmBtn.onclick = () => {
+      closePopup();
+      if(typeof onConfirm === "function") onConfirm();
+    }
+    popupActions.appendChild(confirmBtn);
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = "btnCancel";
+    cancelBtn.innerText = "Batal";
+    cancelBtn.onclick = () => closePopup();
+    popupActions.appendChild(cancelBtn);
+  }
+
+    popup.classList.add('active');
+  }
+
+  function closePopup(){
+  document.getElementById('popupModal').classList.remove('active');
+}
+  // ==========================
+  // SET HALAMAN AKTIF NAVIGASI
+  // ==========================
+  const navLinks = document.querySelectorAll('.navItem');
+  const currentPage = window.location.pathname.split("/").pop(); // ambil nama file saat ini
+  
+  navLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentPage){
+      link.classList.add('active'); // tandai halaman aktif
+    }
+  
+    // Optional: smooth hover klik (langsung ke halaman)
+    link.addEventListener('click', () => {
+      navLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+  
+  // Transisi halaman
+  document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('.container');
+    setTimeout(() => {
+      container.classList.add('show');
+    }, 50); // delay kecil supaya transisi terlihat
+  });
+  
+  // PWA 
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('✅ Service Worker registered'))
+        .catch(err => console.error('❌ Service Worker failed:', err));
+    });
+  }
+</script>
+</body>
+</html>

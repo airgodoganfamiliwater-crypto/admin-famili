@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14b8a6">
+<link rel="icon" href="ikon-512.png">
+<title>Validasi Sales (Admin)</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(20,184,166,.15), transparent 50%),
+    radial-gradient(circle at bottom right, rgba(251,146,60,.1), transparent 50%),
+    linear-gradient(135deg, #f3f4f6, #e0f2fe);
+    min-height:100vh;
+    padding-bottom: 50px;
+}
+  /* ================= GENERAL ================= */
+  * {
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+  
+  /* ================= THEME ================= */
+  :root{
+    --primary:#14b8a6;      /* Biru kehijauan futuristik */
+    --accent:#fb923c;       /* Oranye aksen */
+    --bg:#f3f4f6;           /* Latar belakang cerah */
+    --card:#ffffff;         /* Card putih bersih */
+    --border:#d1d5db;       /* Border abu lembut */
+    --text:#1f2937;         /* Teks utama gelap lembut */
+    --muted:#f3f3f3;        /* Teks sekunder */
+    --glow:0 0 20px rgba(20,184,166,.2);
+  }
+  /* Header */
+  .header {
+    background: var(--primary);
+    height: 120px;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+    position: relative;
+  }
+  
+  /* Container */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Card */
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    position: relative;
+    top: -40px; /* Card menimpa header sedikit */
+  }
+   .card h2 {
+    margin-top: 0;
+    color: var(--primary);
+    text-align: center;
+  }
+
+  .item{
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    background: var(--muted);
+  }
+
+  .nama{
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent);
+  }
+
+  .small{
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .footer{
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .btn{
+    margin-top: 12px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary);
+    color: var(--muted);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* POPUP */
+  .modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.35);
+    z-index: 999;
+  }
+
+  .modal.open { display: flex; }
+
+  .modal-content {
+    width: 90%;
+    max-width: 420px;
+    border-radius: 18px;
+    padding: 18px;
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  }
+
+  .modal-content h2{
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: var(--primary);
+    box-shadow: 0 12px 30px var(--glow);
+  }
+
+  .input{
+    width:100%;
+    padding: 12px;
+    border-radius: 12px;
+    border:1px solid #d1d5db;
+    margin-bottom: 10px;
+  }
+  /* NAVIGASI BAWAH */
+  .bottomNav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+  }
+  
+  .navItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 12px;
+  }
+  
+  .navIcon {
+    background: var(--muted);
+    border-radius: 50%;
+    padding: 8px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: all 0.2s ease;
+  }
+  
+  .navIcon svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--primary);
+  }
+  
+  /* NAVIGASI BAWAH AKTIF */
+  .navItem.active .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem.active span {
+    color: var(--accent);
+  }
+  
+  /* Hover tetap */
+  .navItem:hover .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem:hover span {
+    color: var(--accent);
+  }
+</style>
+</head>
+
+<body>
+
+<div class="header"></div>
+  <div class="container">
+    <div class="card">
+      <h2>Data Sales</h2>
+      <div id="salesBox">
+        Loading...
+      </div>
+      <div class="footer" id="totalSales">
+        Total sales: 0
+      </div>
+      <div id="historyBox" style="margin-top:12px;">
+        <div class="small">Riwayat: belum ada</div>
+      </div>
+      <button id="btnValidate" class="btn">Validasikan</button>
+    </div>  
+    
+    <!-- VALIDASI INPUTAGEN -->
+    <div class="card">
+      <h2>Data Agen</h2>
+      <div style="margin-top:12px;" id="inputagenBox">
+        Loading inputagen...
+      </div>
+      <div class="footer" id="totalInputagen">
+        Total inputagen: 0
+      </div>
+      <div id="historyInputagenBox" style="margin-top:12px;">
+      <div class="small">Riwayat Inputagen: belum ada</div>
+      </div>
+      
+      <button id="btnValidateInputagen" class="btn" style="margin-top:10px;">
+        Validasi Inputagen
+      </button>
+    </div>
+  </div>
+<!-- POPUP INPUTAGEN -->
+<div id="modalInputagen" class="modal">
+  <div class="modal-content">
+    <h2>Kirim Point (Inputagen)</h2>
+    <input id="pointInputAgen" class="input" type="number" value="5" placeholder="Point Agen (default 5)" />
+    <input id="pointInputMember" class="input" type="number" value="10" placeholder="Point Member (default 10)" />
+    <button id="btnSendInputagen" class="btn">Kirim</button>
+  </div>
+</div>
+
+<!-- POPUP -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <h2>Kirim Point</h2>
+    <input id="pointAgen" class="input" type="number" value="5" placeholder="Point Agen (default 5)" />
+    <input id="pointMember" class="input" type="number" value="10" placeholder="Point Member (default 10)" />
+    <button id="btnSend" class="btn">Kirim</button>
+  </div>
+</div>
+<!-- NAVIGASI BAWAH -->
+<div class="bottomNav">
+  <a href="index.html" class="navItem">
+    <div class="navIcon">
+      <!-- Home SVG -->
+      <svg width="36" viewBox="0 0 1664 1312" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M1408 768v480q0 26-19 45t-45 19H960V928H704v384H320q-26 0-45-19t-19-45V768q0-1 .5-3t.5-3l575-474l575 474q1 2 1 6zm223-69l-62 74q-8 9-21 11h-3q-13 0-21-7L832 200L140 777q-12 8-24 7q-13-2-21-11l-62-74q-8-10-7-23.5T37 654L756 55q32-26 76-26t76 26l244 204V64q0-14 9-23t23-9h192q14 0 23 9t9 23v408l219 182q10 8 11 21.5t-7 23.5z" fill="currentColor"/></svg>
+    </div>
+    <span>Home</span>
+  </a>
+  <a href="helper.html" class="navItem">
+    <div class="navIcon">
+      <!-- Edit SVG -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path d="M5.85 3.5a.75.75 0 0 0-1.117-1 9.719 9.719 0 0 0-2.348 4.876.75.75 0 0 0 1.479.248A8.219 8.219 0 0 1 5.85 3.5ZM19.267 2.5a.75.75 0 1 0-1.118 1 8.22 8.22 0 0 1 1.987 4.124.75.75 0 0 0 1.48-.248A9.72 9.72 0 0 0 19.266 2.5Z" />
+        <path fill-rule="evenodd" d="M12 2.25A6.75 6.75 0 0 0 5.25 9v.75a8.217 8.217 0 0 1-2.119 5.52.75.75 0 0 0 .298 1.206c1.544.57 3.16.99 4.831 1.243a3.75 3.75 0 1 0 7.48 0 24.583 24.583 0 0 0 4.83-1.244.75.75 0 0 0 .298-1.205 8.217 8.217 0 0 1-2.118-5.52V9A6.75 6.75 0 0 0 12 2.25ZM9.75 18c0-.034 0-.067.002-.1a25.05 25.05 0 0 0 4.496 0l.002.1a2.25 2.25 0 1 1-4.5 0Z" clip-rule="evenodd" />
+      </svg>
+
+
+    </div>
+    <span>Helper</span>
+  </a>
+  <a href="datamemeber.html" class="navItem">
+    <div class="navIcon">
+      <!-- Member / User SVG -->
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
+        <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+      </svg>
+
+    </div>
+    <span>Member</span>
+  </a>
+</div>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyCl13_a4x-BQnWNUjf9JOQX1DKc-HxLBys",
+    authDomain: "klien-39696.firebaseapp.com",
+    projectId: "klien-39696"
+  });
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  let salesData = [];
+  let filteredSales = [];
+  let isValidated = false;
+  
+  let history = []; // Riwayat sementara
+
+function renderHistory() {
+  const box = document.getElementById("historyBox");
+
+  if (history.length === 0) {
+    box.innerHTML = `<div class="small">Riwayat: belum ada</div>`;
+    return;
+  }
+
+  let html = `<div class="small" style="font-weight:600; margin-bottom:8px;">Riwayat Point</div>`;
+  history.forEach(h => {
+    html += `
+      <div class="item" style="background:#fff; margin-bottom:8px;">
+        <div class="nama">${h.name}</div>
+        <div class="small">Email: ${h.email || "-"}</div>
+        <div class="small">Point ditambah: ${h.addPoint}</div>
+        <div class="small">Total point: ${h.totalPoint}</div>
+      </div>
+    `;
+  });
+
+  box.innerHTML = html;
+}
+
+function renderHistoryInputagen(){
+  const box = document.getElementById("historyInputagenBox");
+
+  if (historyInputagen.length === 0) {
+    box.innerHTML = `<div class="small">Riwayat: belum ada</div>`;
+    return;
+  }
+
+  let html = `<div class="small" style="font-weight:600; margin-bottom:8px;">Riwayat Inputagen</div>`;
+  historyInputagen.forEach(h => {
+    html += `
+      <div class="item" style="background:#fff; margin-bottom:8px;">
+        <div class="nama">${h.name}</div>
+        <div class="small">Email: ${h.email || "-"}</div>
+        <div class="small">Point ditambah: ${h.addPoint}</div>
+        <div class="small">Total point: ${h.totalPoint}</div>
+      </div>
+    `;
+  });
+
+  box.innerHTML = html;
+}
+
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) return alert("Belum login");
+
+    const adminDoc = await db.collection("admins").doc(user.uid).get();
+    if (!adminDoc.exists) return alert("Bukan admin");
+    
+    loadSales();
+    loadInputagen();
+  });
+
+  async function loadSales(){
+    const box = document.getElementById("salesBox");
+    const total = document.getElementById("totalSales");
+
+    box.innerHTML = "Loading...";
+
+    const snap = await db.collection("sales").get();
+    salesData = [];
+    snap.forEach(doc => {
+      salesData.push({ id: doc.id, data: doc.data() });
+    });
+
+    filteredSales = [...salesData];
+    renderSales(filteredSales);
+
+    total.innerText = "Total sales: " + snap.size;
+  }
+
+  function renderSales(list){
+    const box = document.getElementById("salesBox");
+
+    if(list.length === 0){
+      box.innerHTML = "<div class='small'>Tidak ada data sales</div>";
+      document.getElementById("totalSales").innerText = "Total sales: 0";
+      return;
+    }
+
+    let html = "";
+    list.forEach(item => {
+      const d = item.data;
+      html += `
+        <div class="item">
+          <div class="nama">${d.nama || "-"}</div>
+          <div class="small">Ambil: ${d.ambil || "-"}</div>
+          <div class="small">Jenis: ${d.jenis || "-"}</div>
+          <div class="small">Hutang: ${d.hutang || "-"}</div>
+        </div>
+      `;
+    });
+
+    box.innerHTML = html;
+    document.getElementById("totalSales").innerText = "Total sales: " + list.length;
+  }
+
+  // VALIDASI
+  document.getElementById("btnValidate").addEventListener("click", async () => {
+    if(isValidated){
+      // open popup
+      document.getElementById("modal").classList.add("open");
+      return;
+    }
+
+    const agensSnap = await db.collection("agens").get();
+    const membersSnap = await db.collection("members").get();
+
+    const agensNames = agensSnap.docs.map(d => (d.data().namaID || "").trim().toLowerCase());
+    const membersNames = membersSnap.docs.map(d => (d.data().namaID || "").trim().toLowerCase());
+
+    filteredSales = salesData.filter(item => {
+      const salesName = (item.data.nama || "").trim().toLowerCase();
+      return agensNames.includes(salesName) || membersNames.includes(salesName);
+    });
+
+    renderSales(filteredSales);
+
+    isValidated = true;
+    document.getElementById("btnValidate").innerText = "Kirim Point";
+  });
+  
+    let inputagenData = [];
+  let filteredInputagen = [];
+  let isValidatedInputagen = false;
+  let historyInputagen = [];
+  
+  async function loadInputagen(){
+    const box = document.getElementById("inputagenBox");
+    const total = document.getElementById("totalInputagen");
+  
+    box.innerHTML = "Loading inputagen...";
+  
+    const snap = await db.collection("inputagen").get();
+    inputagenData = [];
+    snap.forEach(doc => {
+      inputagenData.push({ id: doc.id, data: doc.data() });
+    });
+  
+    filteredInputagen = [...inputagenData];
+    renderInputagen(filteredInputagen);
+  
+    total.innerText = "Total inputagen: " + snap.size;
+  }
+  
+  function renderInputagen(list){
+    const box = document.getElementById("inputagenBox");
+  
+    if(list.length === 0){
+      box.innerHTML = "<div class='small'>Tidak ada data inputagen</div>";
+      document.getElementById("totalInputagen").innerText = "Total inputagen: 0";
+      return;
+    }
+  
+    let html = "";
+    list.forEach(item => {
+      const d = item.data;
+      html += `
+        <div class="item">
+          <div class="nama">${d.nama || "-"}</div>
+          <div class="small">Ambil: ${d.ambil || "-"}</div>
+          <div class="small">Status: ${d.status || "-"}</div>
+        </div>
+      `;
+    });
+  
+    box.innerHTML = html;
+    document.getElementById("totalInputagen").innerText = "Total inputagen: " + list.length;
+  }
+  
+  document.getElementById("btnValidateInputagen").addEventListener("click", async () => {
+  if(isValidatedInputagen){
+    document.getElementById("modalInputagen").classList.add("open");
+    return;
+  }
+
+  const agensSnap = await db.collection("agens").get();
+  const membersSnap = await db.collection("members").get();
+
+  const agensNames = agensSnap.docs.map(d => (d.data().namaID || "").trim().toLowerCase());
+  const membersNames = membersSnap.docs.map(d => (d.data().namaID || "").trim().toLowerCase());
+
+  filteredInputagen = inputagenData.filter(item => {
+    const name = (item.data.nama || "").trim().toLowerCase();
+    return agensNames.includes(name) || membersNames.includes(name);
+  });
+
+  renderInputagen(filteredInputagen);
+
+  isValidatedInputagen = true;
+  document.getElementById("btnValidateInputagen").innerText = "Kirim Point (Inputagen)";
+});
+
+document.getElementById("btnSendInputagen").addEventListener("click", async () => {
+  try {
+    const pointAgen = Number(document.getElementById("pointInputAgen").value || 5);
+    const pointMember = Number(document.getElementById("pointInputMember").value || 10);
+
+    const agensSnap = await db.collection("agens").get();
+    const membersSnap = await db.collection("members").get();
+
+    const agens = agensSnap.docs.map(d => ({ id: d.id, data: d.data() }));
+    const members = membersSnap.docs.map(d => ({ id: d.id, data: d.data() }));
+
+    const emailsToSend = [];
+    const updatedAgen = new Map();
+    const updatedMember = new Map();
+
+    const uniqueNames = new Set();
+    filteredInputagen.forEach(item => {
+      uniqueNames.add((item.data.nama || "").trim().toLowerCase());
+    });
+
+    uniqueNames.forEach(name => {
+      const agen = agens.find(a => (a.data.namaID || "").trim().toLowerCase() === name);
+      if (agen) {
+        const newPoint = (Number(agen.data.point || 0) + pointAgen);
+        updatedAgen.set(agen.id, newPoint);
+
+        emailsToSend.push({
+          email: agen.data.email,
+          name: agen.data.namaID,
+          addPoint: pointAgen,
+          totalPoint: newPoint
+        });
+      }
+
+      const member = members.find(m => (m.data.namaID || "").trim().toLowerCase() === name);
+      if (member) {
+        const newPoint = (Number(member.data.point || 0) + pointMember);
+        updatedMember.set(member.id, newPoint);
+
+        emailsToSend.push({
+          email: member.data.email,
+          name: member.data.namaID,
+          addPoint: pointMember,
+          totalPoint: newPoint
+        });
+      }
+    });
+
+    // Update point + riwayat
+    const batchUpdate = db.batch();
+    const riwayatRef = db.collection("riwayat");
+    const now = firebase.firestore.Timestamp.now();
+
+    updatedAgen.forEach((point, id) => {
+      const agen = agens.find(a => a.id === id);
+
+      batchUpdate.update(db.collection("agens").doc(id), { point: point });
+      batchUpdate.set(riwayatRef.doc(), {
+        nama: agen?.data.namaID || "-",
+        jenis: "agen",
+        pengambilan: pointAgen,
+        tanggal: now
+      });
+    });
+
+    updatedMember.forEach((point, id) => {
+      const member = members.find(m => m.id === id);
+
+      batchUpdate.update(db.collection("members").doc(id), { point: point });
+      batchUpdate.set(riwayatRef.doc(), {
+        nama: member?.data.namaID || "-",
+        jenis: "member",
+        pengambilan: pointMember,
+        tanggal: now
+      });
+    });
+
+    await batchUpdate.commit();
+
+    // Kirim email (sama seperti sales)
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbyBi8_zOr077CBeRBa_4CLcvsr70WwuHXGKHQvGg_E6q0UCdR0zO4N1-7fnI5kVKsdCYQ/exec";
+    const batchSize = 15;
+
+    for (let i = 0; i < emailsToSend.length; i += batchSize) {
+      const batch = emailsToSend.slice(i, i + batchSize);
+      const url = scriptUrl + "?batch=" + encodeURIComponent(JSON.stringify(batch));
+      const response = await fetch(url);
+      const resJson = await response.json();
+
+      if (!response.ok || resJson.status !== "success") {
+        throw new Error(resJson.message || "Email gagal terkirim");
+      }
+    }
+
+    historyInputagen = emailsToSend;
+    renderHistoryInputagen();
+    
+    toastSuccess("✅ Point Inputagen terkirim & email berhasil dikirim");
+    document.getElementById("modalInputagen").classList.remove("open");
+    // ============================
+    // HAPUS SEMUA INPUTAGEN
+    // ============================
+    const allInputagenSnap = await db.collection("inputagen").get();
+    const batchDeleteInputagen = db.batch();
+    
+    allInputagenSnap.forEach(doc => {
+      batchDeleteInputagen.delete(db.collection("inputagen").doc(doc.id));
+    });
+    
+    await batchDeleteInputagen.commit();
+    
+    loadInputagen();
+
+  } catch (err) {
+    alert("Gagal: " + err.message);
+  }
+});
+
+// Helper Toast
+function toastSuccess(msg) {
+  const t = document.createElement("div");
+  t.innerText = msg;
+  t.style.position = "fixed";
+  t.style.bottom = "20px";
+  t.style.left = "50%";
+  t.style.transform = "translateX(-50%)";
+  t.style.background = "#0041cd";
+  t.style.color = "#fff";
+  t.style.padding = "12px 16px";
+  t.style.borderRadius = "12px";
+  t.style.boxShadow = "0 8px 20px rgba(0,0,0,.2)";
+  t.style.zIndex = "9999";
+  document.body.appendChild(t);
+
+  setTimeout(() => {
+    t.remove();
+  }, 2000);
+}
+
+// KIRIM POINT
+document.getElementById("btnSend").addEventListener("click", async () => {
+  try {
+    const pointAgen = Number(document.getElementById("pointAgen").value || 5);
+    const pointMember = Number(document.getElementById("pointMember").value || 10);
+
+    const agensSnap = await db.collection("agens").get();
+    const membersSnap = await db.collection("members").get();
+
+    const agens = agensSnap.docs.map(d => ({ id: d.id, data: d.data() }));
+    const members = membersSnap.docs.map(d => ({ id: d.id, data: d.data() }));
+
+    const emailsToSend = [];
+    const updatedAgen = new Map();
+    const updatedMember = new Map();
+
+    const uniqueNames = new Set();
+    filteredSales.forEach(item => {
+      uniqueNames.add((item.data.nama || "").trim().toLowerCase());
+    });
+
+    uniqueNames.forEach(name => {
+      const agen = agens.find(a => (a.data.namaID || "").trim().toLowerCase() === name);
+      if (agen) {
+        const newPoint = (Number(agen.data.point || 0) + pointAgen);
+        updatedAgen.set(agen.id, newPoint);
+
+        emailsToSend.push({
+          email: agen.data.email,
+          name: agen.data.namaID,
+          addPoint: pointAgen,
+          totalPoint: newPoint
+        });
+      }
+
+      const member = members.find(m => (m.data.namaID || "").trim().toLowerCase() === name);
+      if (member) {
+        const newPoint = (Number(member.data.point || 0) + pointMember);
+        updatedMember.set(member.id, newPoint);
+
+        emailsToSend.push({
+          email: member.data.email,
+          name: member.data.namaID,
+          addPoint: pointMember,
+          totalPoint: newPoint
+        });
+      }
+    });
+
+    // Update point
+    const batchUpdate = db.batch();
+    const riwayatRef = db.collection("riwayat");
+    const now = firebase.firestore.Timestamp.now();
+
+    updatedAgen.forEach((point, id) => {
+      const agen = agens.find(a => a.id === id);
+
+      // update point agen
+      batchUpdate.update(
+        db.collection("agens").doc(id),
+        { point: point }
+      );
+    
+      // simpan riwayat agen
+      batchUpdate.set(riwayatRef.doc(), {
+        nama: agen?.data.namaID || "-",
+        jenis: "agen",
+        pengambilan: pointAgen,
+        tanggal: now
+      });
+    });
+    updatedMember.forEach((point, id) => {
+      const member = members.find(m => m.id === id);
+
+      // update point member
+      batchUpdate.update(
+        db.collection("members").doc(id),
+        { point: point }
+      );
+    
+      // simpan riwayat member
+      batchUpdate.set(riwayatRef.doc(), {
+        nama: member?.data.namaID || "-",
+        jenis: "member",
+        pengambilan: pointMember,
+        tanggal: now
+      });
+    });
+    await batchUpdate.commit();
+
+    // Hapus semua sales
+    const allSalesSnap = await db.collection("sales").get();
+    const batchDelete = db.batch();
+    allSalesSnap.forEach(doc => {
+      batchDelete.delete(db.collection("sales").doc(doc.id));
+    });
+    await batchDelete.commit();
+
+    // ============================
+    // KIRIM EMAIL (BATCH)
+    // ============================
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbyBi8_zOr077CBeRBa_4CLcvsr70WwuHXGKHQvGg_E6q0UCdR0zO4N1-7fnI5kVKsdCYQ/exec";
+
+    // batch 15 per request (aman)
+    const batchSize = 15;
+
+    for (let i = 0; i < emailsToSend.length; i += batchSize) {
+      const batch = emailsToSend.slice(i, i + batchSize);
+
+      const url = scriptUrl + "?batch=" + encodeURIComponent(JSON.stringify(batch));
+      const response = await fetch(url);
+      const resJson = await response.json();
+
+      if (!response.ok || resJson.status !== "success") {
+        throw new Error(resJson.message || "Email gagal terkirim");
+      }
+    }
+
+    // SUCCESS
+    history = emailsToSend; // simpan riwayat sementara
+    renderHistory();
+    
+    toastSuccess("✅ Point terkirim & email berhasil dikirim");
+    document.getElementById("modal").classList.remove("open"); // tutup popup otomatis
+    loadSales();
+
+  } catch (err) {
+    alert("Gagal: " + err.message);
+  }
+});
+  // Tutup modal saat klik overlay
+  document.querySelectorAll(".modal").forEach(modal => {
+    modal.addEventListener("click", (e) => {
+      // cek kalau yang diklik bukan konten modal
+      if (e.target === modal) {
+        modal.classList.remove("open");
+      }
+    });
+  });
+  // ==========================
+  // SET HALAMAN AKTIF NAVIGASI
+  // ==========================
+  const navLinks = document.querySelectorAll('.navItem');
+  const currentPage = window.location.pathname.split("/").pop(); // ambil nama file saat ini
+  
+  navLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentPage){
+      link.classList.add('active'); // tandai halaman aktif
+    }
+  
+    // Optional: smooth hover klik (langsung ke halaman)
+    link.addEventListener('click', () => {
+      navLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

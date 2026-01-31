@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14b8a6">
+<link rel="icon" href="ikon-512.png">
+<title>Admin Panel – Pesanan FamiliHelper</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(20,184,166,.15), transparent 50%),
+    radial-gradient(circle at bottom right, rgba(251,146,60,.1), transparent 50%),
+    linear-gradient(135deg, #f3f4f6, #e0f2fe);
+    min-height:100vh;
+    padding-bottom: 50px;
+}
+  /* ================= GENERAL ================= */
+  * {
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+  
+  /* ================= THEME ================= */
+  :root{
+    --primary:#14b8a6;      /* Biru kehijauan futuristik */
+    --accent:#fb923c;       /* Oranye aksen */
+    --bg:#f3f4f6;           /* Latar belakang cerah */
+    --card:#ffffff;         /* Card putih bersih */
+    --border:#d1d5db;       /* Border abu lembut */
+    --text:#1f2937;         /* Teks utama gelap lembut */
+    --muted:#f3f3f3;        /* Teks sekunder */
+    --glow:0 0 20px rgba(20,184,166,.2);
+  }
+  /* Header */
+  .header {
+    background: var(--primary);
+    height: 120px;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+    position: relative;
+  }
+  /* Fade-in container */
+  .container {
+    opacity: 0;
+    transform: translateY(20px); /* sedikit turun untuk efek */
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  
+  .container.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  /* Container */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Card */
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    position: relative;
+    top: -40px; /* Card menimpa header sedikit */
+  }
+  .logo-circle {
+    width:96px;
+    height:96px;
+    border-radius:50%;
+    background:#fff;
+    border:1px solid #fff;
+    position:absolute;
+    top:-48px;
+    left:16px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    box-shadow:0 10px 20px rgba(0,0,0,0.25);
+    animation: spin 1s infinite alternate;
+  }
+  @keyframes spin {
+    0% { transform: translateY(0) rotate(-10deg); }
+    100% { transform: translateY(-8px) rotate(10deg); }
+  }
+
+  .logo-circle img {
+    width:100px;
+    height:100px;
+    border-radius:50%;
+    object-fit:cover;
+  }
+  .item{
+    background:#f9fafb;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    flex-wrap:wrap;
+  }
+  .item-left{
+    flex:1;
+    min-width:200px;
+  }
+  .item-left .nama{
+    font-size:18px;
+    font-weight:600;
+    color:#111;
+  }
+  .item-left .jenisLayanan, .item-left .keterangan, .item-left .createdAt{
+    font-size:12px;
+    color:#555;
+  }
+  .buttonDone{
+    padding:6px 12px;
+    background:#14b8a6;
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .buttonDone:hover{
+    background:#0d9488;
+  }
+  .section-title{
+    margin-top: 0;
+    color: var(--primary);
+    font-size: 25px;
+    text-align: center;
+  }
+  
+  /* Popup */
+  .popup{
+    display:none;
+    position:fixed; 
+    inset:0;
+    background:rgba(0,0,0,0.4);
+    backdrop-filter:blur(6px);
+    z-index:999;
+    justify-content:center;
+    align-items:center;
+  }
+  .popup-content{
+    background:#fff;
+    width:92%;
+    max-width:360px;
+    padding:16px;
+    border-radius:18px;
+    position:relative;
+  }
+  .popup h3{
+    margin-top:0;
+    color:#14b8a6;
+  }
+  .popup p{
+    margin:6px 0;
+    font-size:14px;
+  }
+  .popup button{
+    padding:8px 14px;
+    border:none;
+    border-radius:10px;
+    background:#14b8a6;
+    color:#fff;
+    cursor:pointer;
+    font-weight:600;
+    margin-top:10px;
+  }
+  .popup button:hover{
+    background:#0d9488;
+  }
+  /* NAVIGASI BAWAH */
+  .bottomNav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+  }
+  
+  .navItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 12px;
+  }
+  
+  .navIcon {
+    background: var(--muted);
+    border-radius: 50%;
+    padding: 8px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: all 0.2s ease;
+  }
+  
+  .navIcon svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--primary);
+  }
+  
+  /* NAVIGASI BAWAH AKTIF */
+  .navItem.active .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem.active span {
+    color: var(--accent);
+  }
+  
+  /* Hover tetap */
+  .navItem:hover .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem:hover span {
+    color: var(--accent);
+  }
+</style>
+</head>
+
+<body>
+  <div class="header"></div>
+  <div class="container">
+  
+    <!-- CARD PESANAN -->
+    <div class="card">
+      <div class="logo-circle">
+      <img src="helper.png" alt="Logo FW">
+      </div>
+      <h1 class="section-title">Pesanan Helper</h1>
+      <div id="pesananList">Loading...</div>
+    </div>
+  
+    <!-- CARD RIWAYAT -->
+    <div class="card">
+      <h1 class="section-title">Riwayat</h1>
+      <div id="riwayatList">Loading...</div>
+          <!-- tombol hapus -->
+      <div style="text-align:center; margin-top:10px;">
+      <button id="btnHapusRiwayat" style="padding:8px 16px; background:#fb923c; color:#fff; border:none; border-radius:12px; font-weight:600; cursor:pointer;">
+        Hapus Riwayat
+      </button>
+      </div>
+    </div>
+  
+  </div>
+
+<!-- POPUP DETAIL PESANAN -->
+<div class="popup" id="popupDetail" onclick="closePopup(event)">
+  <div class="popup-content" onclick="event.stopPropagation()">
+    <h3 id="popupNama">Nama</h3>
+    <p><strong>Jenis Layanan:</strong> <span id="popupJenisLayanan">-</span></p>
+    <p><strong>Keterangan:</strong> <span id="popupKeterangan">-</span></p>
+    <p><strong>Catatan:</strong> <span id="popupCatatan">-</span></p>
+    <button id="btnKunjungi">Kunjungi</button>
+  </div>
+</div>
+
+<!-- POPUP KONFIRMASI DONE -->
+<div class="popup" id="popupConfirm" onclick="closeConfirm(event)">
+  <div class="popup-content" onclick="event.stopPropagation()">
+    <h3>Konfirmasi</h3>
+    <p>Apakah Anda yakin ingin menandai pesanan ini selesai?</p>
+    <button id="btnConfirmOk">Oke</button>
+    <button onclick="document.getElementById('popupConfirm').style.display='none'" style="margin-left:10px;">Batal</button>
+  </div>
+</div>
+<!-- POPUP KONFIRMASI HAPUS RIWAYAT -->
+<div class="popup" id="popupHapusRiwayat" onclick="closeHapusPopup(event)">
+  <div class="popup-content" onclick="event.stopPropagation()">
+    <h3>Konfirmasi Hapus</h3>
+    <p>Apakah Anda yakin ingin menghapus semua riwayat pesanan?</p>
+    <button id="btnHapusOk">Oke</button>
+    <button onclick="document.getElementById('popupHapusRiwayat').style.display='none'" style="margin-left:10px;">Batal</button>
+  </div>
+</div>
+<!-- NAVIGASI BAWAH -->
+<div class="bottomNav">
+  <a href="index.html" class="navItem">
+    <div class="navIcon">
+      <!-- Home SVG -->
+      <svg width="36" viewBox="0 0 1664 1312" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M1408 768v480q0 26-19 45t-45 19H960V928H704v384H320q-26 0-45-19t-19-45V768q0-1 .5-3t.5-3l575-474l575 474q1 2 1 6zm223-69l-62 74q-8 9-21 11h-3q-13 0-21-7L832 200L140 777q-12 8-24 7q-13-2-21-11l-62-74q-8-10-7-23.5T37 654L756 55q32-26 76-26t76 26l244 204V64q0-14 9-23t23-9h192q14 0 23 9t9 23v408l219 182q10 8 11 21.5t-7 23.5z" fill="currentColor"/></svg>
+    </div>
+    <span>Home</span>
+  </a>
+  <a href="helper.html" class="navItem">
+    <div class="navIcon">
+      <!-- Edit SVG -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path d="M5.85 3.5a.75.75 0 0 0-1.117-1 9.719 9.719 0 0 0-2.348 4.876.75.75 0 0 0 1.479.248A8.219 8.219 0 0 1 5.85 3.5ZM19.267 2.5a.75.75 0 1 0-1.118 1 8.22 8.22 0 0 1 1.987 4.124.75.75 0 0 0 1.48-.248A9.72 9.72 0 0 0 19.266 2.5Z" />
+        <path fill-rule="evenodd" d="M12 2.25A6.75 6.75 0 0 0 5.25 9v.75a8.217 8.217 0 0 1-2.119 5.52.75.75 0 0 0 .298 1.206c1.544.57 3.16.99 4.831 1.243a3.75 3.75 0 1 0 7.48 0 24.583 24.583 0 0 0 4.83-1.244.75.75 0 0 0 .298-1.205 8.217 8.217 0 0 1-2.118-5.52V9A6.75 6.75 0 0 0 12 2.25ZM9.75 18c0-.034 0-.067.002-.1a25.05 25.05 0 0 0 4.496 0l.002.1a2.25 2.25 0 1 1-4.5 0Z" clip-rule="evenodd" />
+      </svg>
+
+
+    </div>
+    <span>Helper</span>
+  </a>
+  <a href="datamemeber.html" class="navItem">
+    <div class="navIcon">
+      <!-- Member / User SVG -->
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+        <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
+        <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+      </svg>
+
+    </div>
+    <span>Member</span>
+  </a>
+</div>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyCl13_a4x-BQnWNUjf9JOQX1DKc-HxLBys",
+  authDomain: "klien-39696.firebaseapp.com",
+  projectId: "klien-39696"
+});
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+let currentUser=null;
+
+// ==== AUTH ====
+auth.onAuthStateChanged(async user=>{
+  if(!user) return alert("Belum login");
+  const a = await db.collection("admins").doc(user.uid).get();
+  if(!a.exists || a.data().role!=="admin" || a.data().status!=="approved"){
+    alert("Bukan admin!");
+    return;
+  }
+  currentUser = user;
+  loadPesanan();
+});
+
+// ==== LOAD PESANAN & RIWAYAT ====
+async function loadPesanan(){
+  try{
+    const snap = await db.collection('pesananFamiliHelper').orderBy('createdAt','desc').get();
+    const pesananList = document.getElementById('pesananList');
+    const riwayatList  = document.getElementById('riwayatList');
+
+    pesananList.innerHTML = "";
+    riwayatList.innerHTML = "";
+
+    if(snap.empty){
+      pesananList.innerHTML="<p>Tidak ada pesanan.</p>";
+      riwayatList.innerHTML="<p>Tidak ada riwayat.</p>";
+      return;
+    }
+
+    snap.forEach(doc=>{
+      const data = doc.data();
+      const div = document.createElement('div');
+      div.className = "item";
+
+      // LEFT SIDE
+      const left = document.createElement('div');
+      left.className = "item-left";
+      left.innerHTML = `
+        <div class="nama">${data.nama || '-'}</div>
+        <div class="jenisLayanan">Layanan: ${data.jenisLayanan || '-'}</div>
+        ${data.keterangan ? `<div class="keterangan">${data.keterangan}</div>` : ''}
+        <div class="createdAt">${data.createdAt ? new Date(data.createdAt.seconds*1000).toLocaleString() : ''}</div>
+      `;
+      div.appendChild(left);
+
+       if(data.status==="diproses"){
+        // Klik item untuk popup
+        left.onclick = ()=>showPopup(data);
+      
+        // Tombol Done
+        const btn = document.createElement('button');
+        btn.className = "buttonDone";
+        btn.innerText = "Done";
+        btn.onclick = ()=>markDone(doc.id, div, data);// panggil fungsi markDone dengan docId dan element div
+        div.appendChild(btn);
+      
+        pesananList.appendChild(div);
+      } else {
+        riwayatList.appendChild(div);
+      }
+    });
+
+  }catch(err){
+    console.error("Gagal load pesanan:", err);
+    document.getElementById('pesananList').innerHTML="<p>Terjadi kesalahan saat mengambil data.</p>";
+    document.getElementById('riwayatList').innerHTML="<p>Terjadi kesalahan saat mengambil data.</p>";
+  }
+}
+// ==== HAPUS RIWAYAT ====
+document.getElementById('btnHapusRiwayat').onclick = () => {
+  document.getElementById('popupHapusRiwayat').style.display = 'flex';
+};
+
+document.getElementById('btnHapusOk').onclick = async () => {
+  try{
+    const confirmPopup = document.getElementById('popupHapusRiwayat');
+    confirmPopup.style.display = 'none';
+
+    // Ambil semua dokumen yang status bukan "diproses"
+    const snap = await db.collection('pesananFamiliHelper')
+                         .where('status','!=','diproses')
+                         .get();
+
+    if(snap.empty){
+      alert("Tidak ada riwayat untuk dihapus!");
+      return;
+    }
+
+    // Hapus semua dokumen hasil query
+    const batch = db.batch();
+    snap.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+
+    // Bersihkan tampilan UI
+    document.getElementById('riwayatList').innerHTML = "";
+    alert("Semua riwayat pesanan berhasil dihapus!");
+
+  } catch(err){
+    console.error(err);
+    alert("Gagal menghapus riwayat!");
+  }
+};
+
+// Tutup popup hapus jika klik overlay
+function closeHapusPopup(event){
+  if(event.target.id==='popupHapusRiwayat'){
+    document.getElementById('popupHapusRiwayat').style.display='none';
+  }
+}
+// ==== UPDATE STATUS DONE DAN PINDAH KE RIWAYAT ====
+function markDone(docId, divItem, data){
+  const popup = document.getElementById('popupConfirm');
+  popup.style.display='flex';
+
+  const btnOk = document.getElementById('btnConfirmOk');
+  
+  btnOk.onclick = async function(){
+    try{
+      // Update status di Firestore
+      await db.collection('pesananFamiliHelper').doc(docId).update({status:"Done"});
+      popup.style.display='none';
+
+      // Hapus dari Pesanan Diproses
+      divItem.remove();
+
+      // Tambahkan ke Riwayat Pesanan
+      const riwayatList = document.getElementById('riwayatList');
+      const div = document.createElement('div');
+      div.className = "item";
+
+      const left = document.createElement('div');
+      left.className = "item-left";
+      left.innerHTML = `
+        <div class="nama">${data.nama || '-'}</div>
+        <div class="jenisLayanan">Layanan: ${data.jenisLayanan || '-'}</div>
+        <div class="createdAt">${data.createdAt ? new Date(data.createdAt.seconds*1000).toLocaleString() : ''}</div>
+      `;
+      div.appendChild(left);
+
+      riwayatList.prepend(div); // prepend biar di atas
+
+      alert("Pesanan berhasil ditandai Done!");
+    }catch(err){
+      console.error(err);
+      alert("Gagal update status!");
+    }
+  }
+}
+
+
+// Tutup popup konfirmasi jika klik overlay
+function closeConfirm(event){
+  if(event.target.id==='popupConfirm'){
+    document.getElementById('popupConfirm').style.display='none';
+  }
+}
+
+// ==== POPUP ====
+function showPopup(data){
+  document.getElementById('popupNama').innerText = data.nama || '-';
+  document.getElementById('popupJenisLayanan').innerText = data.jenisLayanan || '-';
+  document.getElementById('popupKeterangan').innerText = data.keterangan || '-';
+  document.getElementById('popupCatatan').innerText = data.catatan || '-';
+  document.getElementById('popupDetail').style.display='flex';
+
+  // Tombol kunjungi (contoh: bisa arahkan ke link atau fungsi lain)
+  document.getElementById('btnKunjungi').onclick = async () => {
+  try {
+    if(!data.uid) return alert("Data UID tidak tersedia!");
+
+    // Cari dulu di members
+    let docUser = await db.collection('members').doc(data.uid).get();
+
+    // Jika tidak ada, cari di agens
+    if(!docUser.exists){
+      docUser = await db.collection('agens').doc(data.uid).get();
+    }
+
+    if(!docUser.exists){
+      return alert("Lokasi pengguna tidak ditemukan!");
+    }
+
+    const lokasi = docUser.data().lokasi;
+    if(!lokasi || lokasi.lat == null || lokasi.lng == null){
+      return alert("Lokasi pengguna belum tersedia!");
+    }
+
+    // Buat URL Google Maps
+    const url = `https://www.google.com/maps/search/?api=1&query=${lokasi.lat},${lokasi.lng}`;
+    window.open(url, '_blank'); // buka di tab baru atau aplikasi maps
+
+  } catch(err) {
+    console.error(err);
+    alert("Gagal mengambil lokasi!");
+  }
+};
+}
+
+function closePopup(event){
+  // Klik overlay menutup popup
+  if(event.target.id==='popupDetail'){
+    document.getElementById('popupDetail').style.display='none';
+  }
+}
+  // ==========================
+  // SET HALAMAN AKTIF NAVIGASI
+  // ==========================
+  const navLinks = document.querySelectorAll('.navItem');
+  const currentPage = window.location.pathname.split("/").pop(); // ambil nama file saat ini
+  
+  navLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentPage){
+      link.classList.add('active'); // tandai halaman aktif
+    }
+  
+    // Optional: smooth hover klik (langsung ke halaman)
+    link.addEventListener('click', () => {
+      navLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+  
+  // Transisi halaman
+  document.addEventListener('DOMContentLoaded', () => {
+  const container = document.querySelector('.container');
+  setTimeout(() => {
+    container.classList.add('show');
+  }, 50); // delay kecil supaya transisi terlihat
+  });
+</script>
+</body>
+</html>
