@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14b8a6">
+<link rel="icon" href="ikon-512.png">
+<title>Email Admin Famili</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Inter:wght@400;600&display=swap');
+  
+  body {
+    margin: 0;
+    font-family: 'Nunito', sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(20,184,166,.15), transparent 50%),
+      radial-gradient(circle at bottom right, rgba(251,146,60,.1), transparent 50%),
+      linear-gradient(135deg, #f3f4f6, #e0f2fe);
+    min-height:100vh;
+    padding-bottom: 50px;
+  }
+  
+  /* ================= GENERAL ================= */
+  * {
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+  
+  /* ================= THEME ================= */
+  :root{
+    --primary:#14b8a6;      /* Biru kehijauan futuristik */
+    --accent:#fb923c;       /* Oranye aksen */
+    --bg:#f3f4f6;           /* Latar belakang cerah */
+    --card:#ffffff;         /* Card putih bersih */
+    --border:#d1d5db;       /* Border abu lembut */
+    --text:#1f2937;         /* Teks utama gelap lembut */
+    --muted:#f3f3f3;        /* Teks sekunder */
+    --glow:0 0 20px rgba(20,184,166,.2);
+  }
+  
+  /* Header */
+  .header {
+    background: var(--primary);
+    height: 120px;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+  }
+  /* Fade-in container */
+  .container {
+    opacity: 0;
+    transform: translateY(20px); /* sedikit turun untuk efek */
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  
+  .container.show {
+    opacity: 1;
+    transform: translateY(0);
+  }   
+  /* Container */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    top:-60px;
+  }
+  
+  /* Card utama */
+  .main-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+  .main-card h1 {
+    margin-top: 0;
+    color: var(--primary);
+    font-size: 30px;
+    text-align: center;
+  }
+  .action-bar{
+    background: var(--card);
+    padding:15px;
+    border-radius:18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    display:flex;
+    justify-content:center;   /* center horizontal */
+    gap:12px;                  /* jarak antar tombol */
+    margin:20px 0;
+    flex-wrap:wrap;            /* biar responsive HP */
+  }
+  
+  .action-bar .btn{
+    min-width:180px;
+    text-align:center;
+  }
+  
+  /* Buttons */
+  .btn{
+    padding:12px 16px;
+    border:none;
+    border-radius:10px;
+    color:white;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow: var(--glow);
+  }
+  .global{background:var(--primary)}
+  .custom{background:var(--accent)}
+  .preview{background:#6366f1}
+  
+  /* User List */
+  .list{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    gap:12px;
+    margin-top:15px;
+  }
+  
+  /* User Card */
+  .card{
+    background:white;
+    border:1px solid var(--border);
+    padding:12px;
+    border-radius:14px;
+    cursor:pointer;
+    transition:.2s;
+  }
+  .card:hover{transform:scale(1.02)}
+  .card.selected{
+    background:var(--primary);
+    color: white;
+  }
+  
+  /* Text */
+  h4{margin:0;font-size:16px}
+  p{margin:0;font-size:12px;color:var(--primary)}
+  .selected p{
+    color: var(--card);
+  }
+  
+  /* MODAL */
+  .modal{
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,.4);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    backdrop-filter: blur(6px);
+  }
+  .modal.show{display:flex}
+  
+  .box{
+    background:white;
+    padding:18px;
+    border-radius:16px;
+    width:95%;
+    max-width:500px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  
+  /* Input */
+  input,textarea{
+    width:100%;
+    padding:10px;
+    margin:6px 0;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:#f9fafb;
+  }
+  textarea{min-height:90px}
+  /* NAVIGASI BAWAH */
+  .bottomNav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+  }
+  
+  .navItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 12px;
+  }
+  
+  .navIcon {
+    background: var(--muted);
+    border-radius: 50%;
+    padding: 8px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: all 0.2s ease;
+  }
+  
+  .navIcon svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--primary);
+  }
+  
+  /* NAVIGASI BAWAH AKTIF */
+  .navItem.active .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem.active span {
+    color: var(--accent);
+  }
+  
+  /* Hover tetap */
+  .navItem:hover .navIcon {
+    background: var(--accent);
+  }
+  
+  .navItem:hover span {
+    color: var(--accent);
+  }
+  .glassAlert{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.4);
+    backdrop-filter:blur(10px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+  }
+  
+  .glassAlert.show{
+    display:flex;
+  }
+  
+  .glassBox{
+    background:rgba(255,255,255,.2);
+    backdrop-filter:blur(25px);
+    border:1px solid rgba(255,255,255,.3);
+    border-radius:20px;
+    padding:20px;
+    max-width:320px;
+    width:90%;
+    text-align:center;
+    color:#fff;
+    box-shadow:0 20px 40px rgba(0,0,0,.3);
+  }
+  
+  .glassBox h3{
+    margin:0 0 10px;
+    font-size:18px;
+  }
+  
+  .glassBox p{
+    font-size:14px;
+    margin-bottom:15px;
+    color: #fff;
+  }
+  
+  .glassBox button{
+    background:#14b8a6;
+    border:none;
+    padding:10px 20px;
+    border-radius:10px;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+  }
+</style>
+</head>
+
+<body>
+  <div class="header"></div>
+
+  <div class="container">
+    <div class="main-card">
+      <h1>Kirim Notifikasi</h1>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="action-bar">
+          <button class="btn global" id="btnGlobal">Kirim Email Global</button>
+          <button class="btn custom" id="btnCustom">Kirim Email Terpilih</button>
+        </div>
+      </div>
+  
+      <div class="list" id="userList"></div>
+  
+    </div>
+  </div>
+  
+  <!-- POPUP INPUT -->
+  <div class="modal" id="popup">
+    <div class="box">
+      <h3>Kirim Email Famili</h3>
+      
+      <input id="subject" value="Galon Kamu Sudah Kosong Belum?😅">
+      <textarea id="body">Yuk! cek galon kamu, sudah kosong belum, jangan sampai telat pesan yaa, nanti kehabisan stock🤭</textarea>
+      
+      <input id="imageUrl" placeholder="Link gambar promo (https://...jpg)">
+      <input id="footerText" value="Pesan galon sekarang lewat WhatsApp">
+      <input id="waLink" value="https://wa.me/6285759995235?text=Ang%20pengen%20banyu...">
+      
+      <button id="previewBtn" class="btn preview">👁 Preview Email</button>
+      <button id="send" class="btn global">KIRIM</button>
+      <button id="closePopup" class="btn custom">BATAL</button>
+    </div>
+  </div>
+  
+  <!-- PREVIEW MODAL -->
+  <div class="modal" id="previewModal">
+    <div class="box" style="max-width:650px">
+      <h3>Preview Email</h3>
+      <div id="emailPreview" style="border:1px solid #ddd;border-radius:10px;padding:10px;background:#f9fafb"></div>
+      <button id="closePreview" class="btn custom">TUTUP</button>
+    </div>
+  </div>
+  <!-- NAVIGASI BAWAH -->
+  <div class="bottomNav">
+    <a href="index.html" class="navItem">
+      <div class="navIcon">
+        <!-- Home SVG -->
+        <svg width="36" viewBox="0 0 1664 1312" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M1408 768v480q0 26-19 45t-45 19H960V928H704v384H320q-26 0-45-19t-19-45V768q0-1 .5-3t.5-3l575-474l575 474q1 2 1 6zm223-69l-62 74q-8 9-21 11h-3q-13 0-21-7L832 200L140 777q-12 8-24 7q-13-2-21-11l-62-74q-8-10-7-23.5T37 654L756 55q32-26 76-26t76 26l244 204V64q0-14 9-23t23-9h192q14 0 23 9t9 23v408l219 182q10 8 11 21.5t-7 23.5z" fill="currentColor"/></svg>
+      </div>
+      <span>Home</span>
+    </a>
+    <a href="helper.html" class="navItem">
+      <div class="navIcon">
+        <!-- Edit SVG -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+          <path d="M5.85 3.5a.75.75 0 0 0-1.117-1 9.719 9.719 0 0 0-2.348 4.876.75.75 0 0 0 1.479.248A8.219 8.219 0 0 1 5.85 3.5ZM19.267 2.5a.75.75 0 1 0-1.118 1 8.22 8.22 0 0 1 1.987 4.124.75.75 0 0 0 1.48-.248A9.72 9.72 0 0 0 19.266 2.5Z" />
+          <path fill-rule="evenodd" d="M12 2.25A6.75 6.75 0 0 0 5.25 9v.75a8.217 8.217 0 0 1-2.119 5.52.75.75 0 0 0 .298 1.206c1.544.57 3.16.99 4.831 1.243a3.75 3.75 0 1 0 7.48 0 24.583 24.583 0 0 0 4.83-1.244.75.75 0 0 0 .298-1.205 8.217 8.217 0 0 1-2.118-5.52V9A6.75 6.75 0 0 0 12 2.25ZM9.75 18c0-.034 0-.067.002-.1a25.05 25.05 0 0 0 4.496 0l.002.1a2.25 2.25 0 1 1-4.5 0Z" clip-rule="evenodd" />
+        </svg>
+  
+  
+      </div>
+      <span>Helper</span>
+    </a>
+    <a href="datamemeber.html" class="navItem">
+      <div class="navIcon">
+        <!-- Member / User SVG -->
+         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+          <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
+          <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+        </svg>
+  
+      </div>
+      <span>Member</span>
+    </a>
+  </div>
+  <!-- GLASS POPUP ALERT -->
+  <div id="glassAlert" class="glassAlert">
+    <div class="glassBox">
+      <h3 id="glassTitle">Notifikasi</h3>
+      <p id="glassMessage">Pesan</p>
+      <button id="glassOk">OK</button>
+    </div>
+  </div>
+  <script>
+    // FIREBASE
+    firebase.initializeApp({
+      apiKey: "AIzaSyCl13_a4x-BQnWNUjf9JOQX1DKc-HxLBys",
+      authDomain: "klien-39696.firebaseapp.com",
+      projectId: "klien-39696"
+    });
+    
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
+    const userList = document.getElementById("userList");
+    const popup = document.getElementById("popup");
+    const previewModal = document.getElementById("previewModal");
+    const emailPreview = document.getElementById("emailPreview");
+    
+    const subject = document.getElementById("subject");
+    const body = document.getElementById("body");
+    const imageUrl = document.getElementById("imageUrl");
+    const footerText = document.getElementById("footerText");
+    const waLink = document.getElementById("waLink");
+    
+    const sendBtn = document.getElementById("send");
+    const previewBtn = document.getElementById("previewBtn");
+    const btnGlobal = document.getElementById("btnGlobal");
+    const btnCustom = document.getElementById("btnCustom");
+    const closePopup = document.getElementById("closePopup");
+    const closePreview = document.getElementById("closePreview");
+    
+    let allEmails = [];
+    
+    /* ADMIN CHECK */
+    auth.onAuthStateChanged(async user=>{
+      if(!user) return showAlert("Belum login");
+    
+      const adminDoc = await db.collection("admins").doc(user.uid).get();
+      if(!adminDoc.exists) return showAlert("❌ Bukan admin");
+    
+      loadUsers();
+    });
+    
+    /* LOAD USERS */
+    async function loadUsers(){
+      userList.innerHTML="";
+      allEmails=[];
+    
+      const agens = await db.collection("agens").get();
+      const members = await db.collection("members").get();
+    
+      function addUser(doc){
+        const d = doc.data();
+        if(!d.email) return;
+    
+        allEmails.push(d.email);
+        const div=document.createElement("div");
+        div.className="card";
+        div.dataset.email=d.email;
+        div.innerHTML=`<h4>${d.namaID||"-"}</h4><p>${d.email}</p>`;
+        div.onclick=()=>div.classList.toggle("selected");
+        userList.appendChild(div);
+      }
+    
+      agens.forEach(addUser);
+      members.forEach(addUser);
+    }
+    
+    /* BUTTON GLOBAL */
+    btnGlobal.onclick=()=>{
+      document.querySelectorAll(".card").forEach(c=>c.classList.add("selected"));
+      popup.classList.add("show");
+    };
+    
+    /* BUTTON CUSTOM */
+    btnCustom.onclick=()=>popup.classList.add("show");
+    closePopup.onclick=()=>popup.classList.remove("show");
+    
+    /* EMAIL HTML TEMPLATE (SAMA DENGAN APPSCRIPT) */
+    function generateEmailHTML(){
+      return `
+      <div style="font-family:Arial;background:#2563eb;padding:20px;text-align:center">
+        
+        <img src="https://iili.io/fSihpKG.jpg"
+          style="width:80px;height:80px;border-radius:50%;background:white;padding:5px">
+    
+        <div style="background:white;margin:15px auto;padding:15px;border-radius:12px;max-width:420px;text-align:left">
+          <p>${body.value}</p>
+          ${imageUrl.value ? `<img src="${imageUrl.value}" style="width:100%;border-radius:10px;margin-top:10px">` : ""}
+        </div>
+    
+        <div style="background:#7dd3fc;padding:12px;border-radius:12px;max-width:420px;margin:auto">
+          <b>${footerText.value}</b><br><br>
+          <a href="${waLink.value}" style="background:#16a34a;color:white;padding:10px 16px;border-radius:6px;text-decoration:none">
+            Klik disini
+          </a>
+        </div>
+      </div>`;
+    }
+    
+    /* PREVIEW */
+    previewBtn.onclick=()=>{
+      emailPreview.innerHTML = generateEmailHTML();
+      previewModal.classList.add("show");
+    };
+    closePreview.onclick=()=>previewModal.classList.remove("show");
+    
+    /* SEND EMAIL */
+    sendBtn.onclick = async ()=>{
+      const selected=[...document.querySelectorAll(".card.selected")].map(c=>c.dataset.email);
+      if(selected.length==0) return showAlert("Pilih email dulu!");
+    
+      // 👉 TAMPILKAN LOADING POPUP
+      showAlert("Mengirim email...", "Loading ⏳");
+    
+      const formData=new FormData();
+      formData.append("emails", JSON.stringify(selected));
+      formData.append("subject", subject.value);
+      formData.append("body", body.value);
+      formData.append("imageUrl", imageUrl.value);
+      formData.append("footerText", footerText.value);
+      formData.append("waLink", waLink.value);
+    
+      const res = await fetch("https://script.google.com/macros/s/AKfycbyPIbljUGfll00feEpajVEsaXCcSJGh7gW8-a1yopzXQs0A9yoWCjMscB25a8PxEeOY/exec", {
+        method:"POST",
+        body: formData
+      });
+    
+      const json = await res.json();
+    
+      // 👉 UPDATE POPUP JADI SUKSES
+      showAlert("Email terkirim ke "+json.sent+" orang", "Sukses 🎉");
+    
+      popup.classList.remove("show");
+    };
+    //transisi
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.querySelector('.container');
+      setTimeout(() => {
+        container.classList.add('show');
+      }, 50); // delay kecil supaya transisi terlihat
+    });
+    const glassAlert = document.getElementById("glassAlert");
+    const glassTitle = document.getElementById("glassTitle");
+    const glassMessage = document.getElementById("glassMessage");
+    const glassOk = document.getElementById("glassOk");
+    
+    function showAlert(msg, title="Notifikasi"){
+      glassTitle.innerText = title;
+      glassMessage.innerText = msg;
+      glassAlert.classList.add("show");
+    }
+    
+    glassOk.onclick = ()=> glassAlert.classList.remove("show");
+  </script>
+
+</body>
+</html>
